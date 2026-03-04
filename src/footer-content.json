@@ -1,0 +1,43 @@
+{
+    "about": {
+        "title": "About Us",
+        "text": "We provide high-quality tools for DIY enthusiasts and professionals alike."
+    },
+    "links": [
+        {
+            "label": "Workshops",
+            "href": "#"
+        },
+        {
+            "label": "Tools Catalog",
+            "href": "#"
+        },
+        {
+            "label": "Shipping Policy",
+            "href": "#"
+        },
+        {
+            "label": "Returns",
+            "href": "#"
+        }
+    ],
+    "socials": [
+        {
+            "platform": "Instagram",
+            "href": "#"
+        },
+        {
+            "platform": "Facebook",
+            "href": "#"
+        },
+        {
+            "platform": "Twitter",
+            "href": "#"
+        }
+    ],
+    "contact": {
+        "email": "hello@diytools.com",
+        "phone": "+1 (555) 123-4567"
+    },
+    "copyright": "© 2024 DIY Tools Co. All rights reserved."
+}

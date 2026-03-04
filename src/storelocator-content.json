@@ -1,0 +1,33 @@
+{
+    "title": "Our Stores",
+    "subtitle": "Find a DIY Tools Co. location near you",
+    "stores": [
+        {
+            "id": "dubai-mall",
+            "name": "Dubai Mall Flagship",
+            "image": "/images/store-placeholder.png",
+            "address": "Level 2, near Grand Atrium, The Dubai Mall, Downtown Dubai",
+            "phone": "+971 4 123 4567",
+            "email": "dubai.mall@diytools.co",
+            "hours": "Mon-Sun: 10:00 AM - 12:00 AM"
+        },
+        {
+            "id": "moe",
+            "name": "Mall of the Emirates",
+            "image": "/images/store-placeholder.png",
+            "address": "Ground Floor, Ski Dubai Entrance, Mall of the Emirates",
+            "phone": "+971 4 987 6543",
+            "email": "moe@diytools.co",
+            "hours": "Mon-Sun: 10:00 AM - 10:00 PM"
+        },
+        {
+            "id": "yas-mall",
+            "name": "Yas Mall Abu Dhabi",
+            "image": "/images/store-placeholder.png",
+            "address": "First Floor, Luxury Court, Yas Mall, Abu Dhabi",
+            "phone": "+971 2 456 7890",
+            "email": "yas.mall@diytools.co",
+            "hours": "Sat-Wed: 10:00 AM - 10:00 PM, Thu-Fri: 10:00 AM - 12:00 AM"
+        }
+    ]
+}

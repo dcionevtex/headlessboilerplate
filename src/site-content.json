@@ -1,0 +1,111 @@
+{
+    "search": {
+        "title": "Search Results",
+        "searchingFor": "Searching for",
+        "resultsFound": "results found",
+        "noResults": {
+            "title": "No results found",
+            "message": "We couldn't find any products matching your search. Try different keywords or browse our categories.",
+            "suggestion": "Try searching for:"
+        },
+        "suggestions": [
+            "power tools",
+            "safety equipment",
+            "hand tools",
+            "paint supplies"
+        ],
+        "loading": "Searching for products...",
+        "error": {
+            "title": "Oops! Something went wrong",
+            "message": "We're having trouble loading search results. Please try again.",
+            "retry": "Try Again"
+        },
+        "topSearches": {
+            "title": "Trending Searches",
+            "emptyTitle": "Start Searching",
+            "emptyMessage": "Discover our wide range of tools and equipment"
+        }
+    },
+    "cart": {
+        "title": "My Shopping Cart",
+        "empty": "Your cart is empty",
+        "subtotal": "Total",
+        "checkout": "Go to Checkout",
+        "continueShopping": "Continue Shopping",
+        "soldBy": "Sold by"
+    },
+    "banner": {
+        "image": "/images/banner.png",
+        "title": "Build Your Dream Project",
+        "subtitle": "Premium tools for makers, builders, and creators.",
+        "ctaText": "Shop Now"
+    },
+    "carousel": {
+        "slides": [
+            {
+                "id": 1,
+                "image": "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=1920&h=600&fit=crop",
+                "title": "Power Tools Sale",
+                "subtitle": "Save up to 40% on professional-grade power tools",
+                "ctaText": "Shop Power Tools",
+                "ctaLink": "#power-tools"
+            },
+            {
+                "id": 2,
+                "image": "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=1920&h=600&fit=crop",
+                "title": "Hand Tools Collection",
+                "subtitle": "Precision tools for every project, big or small",
+                "ctaText": "Explore Collection",
+                "ctaLink": "#hand-tools"
+            },
+            {
+                "id": 3,
+                "image": "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=1920&h=600&fit=crop",
+                "title": "Workshop Essentials",
+                "subtitle": "Everything you need to set up your dream workshop",
+                "ctaText": "Get Started",
+                "ctaLink": "#workshop"
+            }
+        ]
+    },
+    "serviceHighlights": [
+        {
+            "id": 1,
+            "icon": "returns",
+            "title": "Free Returns",
+            "subtitle": "30 days Return"
+        },
+        {
+            "id": 2,
+            "icon": "shipping",
+            "title": "Free Shipping",
+            "subtitle": "Orders above $99.99"
+        },
+        {
+            "id": 3,
+            "icon": "pickup",
+            "title": "Store Pickup",
+            "subtitle": "Free in selected stores"
+        },
+        {
+            "id": 4,
+            "icon": "loyalty",
+            "title": "Loyalty Points",
+            "subtitle": "Earn Points & Save"
+        }
+    ],
+    "sections": {
+        "featuredSeller": {
+            "collectionId": "137",
+            "type": "carousel",
+            "dynamicTitle": true,
+            "fallbackTitle": "Featured Seller"
+        },
+        "newArrivals": {
+            "collectionId": "139",
+            "type": "grid",
+            "title": "Just Arrived",
+            "subtitle": "Check out our latest additions to the catalog"
+        }
+    }
+}

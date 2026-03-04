@@ -1,0 +1,154 @@
+# Project Specification: Modular Headless E-Commerce Application
+
+## 1. Executive Summary
+Develop a production-grade, headless e-commerce storefront using Next.js 15+ (App Router). The application acts as a presentation layer for a VTEX backend, emphasizing modularity, configuration-driven architecture, and zero hardcoded content.
+
+## 2. Technology Stack & Environment
+- **Framework**: Next.js 16.x (App Router)
+- **Language**: TypeScript (Strict Mode)
+- **Styling**: Tailwind CSS v4 (Mobile-first, Utility-first)
+- **State Management**: React Context API (`CartContext`)
+- **Backend/API**: VTEX Search API (REST)
+- **Asset Optimization**: `next/image`
+- **Linting**: ESLint + Prettier
+
+## 3. Architecture & File Structure
+
+### 3.1 Directory Layout
+```
+src/
+├── app/                  # App Router pages and layouts
+│   ├── layout.tsx        # Root layout (Html, Body, Providers)
+│   ├── page.tsx          # Homepage
+│   ├── product/
+│   │   └── [id]/page.tsx # Dynamic Product Detail Page
+│   ├── store-locator/    # Store Locator page
+│   └── globals.css       # Global styles & Tailwind directives
+├── components/           # Reusable UI components
+│   ├── Header.tsx        # Main navigation & header
+│   ├── Footer.tsx        # Site footer
+│   ├── ProductCard.tsx   # Individual product display
+│   ├── MiniCart.tsx      # Slide-out cart drawer
+│   └── ...
+├── context/              # React Context providers
+│   └── CartContext.tsx   # Shopping cart state logic
+├── lib/                  # Utility functions & API clients
+│   ├── vtex.ts           # VTEX API data fetching
+│   └── cart.ts           # LocalStorage persistence logic
+├── types/                # TypeScript definitions
+│   └── vtex.ts           # Data models (Product, SKU, Seller)
+└── [config-files]        # JSON configuration & content
+    ├── config.json
+    ├── site-content.json
+    ├── menu-content.json
+    └── ...
+```
+
+### 3.2 Configuration System (`src/config.json`)
+The app's behavior must be controlled via a central configuration file.
+**Schema**:
+```json
+{
+  "vtex": {
+    "accountName": "string",  // VTEX Account Name
+    "sellerId": "string"      // Default Seller ID
+  },
+  "globalSettings": {
+    "currency": "AED",
+    "installmentProductCard": boolean // Toggle installment info on cards
+  },
+  "marketplace": {
+    "showSellerId": boolean   // Toggle "Sold by [Seller]" visibility
+  },
+  "pdp": {
+    "showBrandName": boolean,
+    "showInStock": boolean,
+    "stockThresholds": {
+        "low": number,        // e.g. 10 (triggers "Low Stock" warning)
+        "medium": number      // e.g. 100
+    }
+  }
+}
+```
+
+### 3.3 Decoupled Content Strategy
+No text should be hardcoded in React components. Use specific JSON files:
+- **`header-content.json`**: Logo paths, search placeholders.
+- **`menu-content.json`**: Nested array structure for navigation (Category -> Subcategories).
+- **`footer-content.json`**: Columnar links, social media URLs, copyright text.
+- **`storelocator-content.json`**: Array of store objects (Name, Address, Phone, Email, Hours, Image URL).
+- **`site-content.json`**: Homepage sections (Carousel slides, Collection IDs for "New Arrivals", etc.).
+
+## 4. Key Data Models (TypeScript)
+
+**`VTEXProduct`**:
+- `productId`: string
+- `productName`: string
+- `brand`: string
+- `items`: VTEXItem[] (List of SKUs)
+
+**`VTEXItem` (SKU)**:
+- `itemId`: string
+- `name`: string
+- `images`: { imageUrl: string }[]
+- `sellers`: VTEXSeller[]
+
+**`VTEXSeller`**:
+- `sellerId`: string
+- `commertialOffer`: { Price: number, ListPrice: number, AvailableQuantity: number }
+
+## 5. Core Features & Functional Requirements
+
+### 5.1 Global Header
+- **Desktop**:
+  - Logo (left).
+  - Search Bar (center) - redirects to `/search?q=...`.
+  - "Store Locator" Link (Icon + Text).
+  - Cart Icon (Right) - opens MiniCart, shows item count badge.
+- **Mobile**:
+  - Hamburger Menu (Left) - Opens sidebar drawer.
+  - Logo (Center/Left).
+  - Cart Icon (Right).
+  - **Menu Drawer**: Accordion-style categories from `menu-content.json`. Bottom footer contains "Store Locator".
+
+### 5.2 Product Discovery (Homepage)
+- **Hero Carousel**: Renders slides defined in `site-content.json`.
+- **Product Carousel**: Horizontal scroll of products from a specific VTEX Collection.
+- **Product Grid**: Responsive grid (2 cols mobile, 4 cols desktop) for "New Arrivals".
+
+### 5.3 Product Detail Page (PDP)
+- **Route**: `/product/[productId]`
+- **Logic**: Fetch product data by ID. Default to first available SKU (`items[0]`).
+- **Dynamic Elements**:
+  - **Stock Status**: Calculate based on `AvailableQuantity` vs `config.stockThresholds`.
+    - 0 -> "Out of Stock" (Red)
+    - < Low -> "Low Stock" (Red/Yellow warning)
+    - > Medium -> "High Stock" (Green)
+  - **Seller Info**: Conditionally render "Sold by [SellerName]" based on `config.marketplace.showSellerId`.
+- **Interactions**:
+  - SKU Selector: Update displayed image/price when a different SKU is picked.
+  - Quantity Input: Increment/Decrement.
+  - Add to Cart: Calls `CartContext.addToCart`.
+
+### 5.4 Store Locator
+- **Route**: `/store-locator`
+- **Data Source**: `storelocator-content.json`.
+- **UI**:
+  - Hero Title & Subtitle.
+  - Responsive Grid of Store Cards.
+  - Each card features: Store Image, Name, Address (with icon), Phone (clickable `tel:`), Email (clickable `mailto:`), Opening Hours.
+
+### 5.5 Shopping Cart (Context)
+- **State**: List of items `{ id, quantity, price, name, image }`.
+- **Persistence**: Save to `localStorage` to persist across reloads.
+- **MiniCart Component**:
+  - Overlay drawer.
+  - Lists added items.
+  - Allows quantity adjustment standard `+` / `-` buttons.
+  - Calculates subtotal dynamically.
+
+## 6. Implementation Notes
+- **API Helper**: Create `fetchVTEXCollection(collectionId)` in `lib/vtex.ts`.
+- **Styling**: Use Tailwind Clean architecture. Avoid arbitrary values (e.g. `w-[325px]`); use standard tokens (`w-80`).
+- **Icons**: Use accessible inline SVGs or Lucide/Heroicons.
+- **Images**: Remote patterns for `vteximg.com.br` must be configured in `next.config.ts`.

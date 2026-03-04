@@ -1,0 +1,24 @@
+{
+    "vtex": {
+        "accountName": "sobharealtypoc",
+        "checkoutPath": ".myvtex.com/checkout",
+        "sellerId": "1"
+    },
+    "globalSettings": {
+        "currency": "AED",
+        "installmentProductCard": false,
+        "gtmContainerId": "GTM-TLLPC96K",
+        "googleMapsApiKey": "AIzaSyB3WRlu7tsLe4FBtNwUtFlaNcM4HpJXG6k"
+    },
+    "marketplace": {
+        "showSellerId": true
+    },
+    "pdp": {
+        "showBrandName": true,
+        "showInStock": true,
+        "stockThresholds": {
+            "low": 10,
+            "medium": 100
+        }
+    }
+}

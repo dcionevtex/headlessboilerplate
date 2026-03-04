@@ -1,0 +1,166 @@
+{
+    "categories": [
+        {
+            "id": 1,
+            "name": "Power Tools",
+            "href": "/category/power-tools",
+            "subcategories": [
+                {
+                    "id": 11,
+                    "name": "Drills & Drivers",
+                    "href": "/category/power-tools/drills"
+                },
+                {
+                    "id": 12,
+                    "name": "Saws & Cutters",
+                    "href": "/category/power-tools/saws"
+                },
+                {
+                    "id": 13,
+                    "name": "Sanders & Grinders",
+                    "href": "/category/power-tools/sanders"
+                },
+                {
+                    "id": 14,
+                    "name": "Impact Wrenches",
+                    "href": "/category/power-tools/wrenches"
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "name": "Hand Tools",
+            "href": "/category/hand-tools",
+            "subcategories": [
+                {
+                    "id": 21,
+                    "name": "Hammers & Mallets",
+                    "href": "/category/hand-tools/hammers"
+                },
+                {
+                    "id": 22,
+                    "name": "Screwdrivers",
+                    "href": "/category/hand-tools/screwdrivers"
+                },
+                {
+                    "id": 23,
+                    "name": "Pliers & Cutters",
+                    "href": "/category/hand-tools/pliers"
+                },
+                {
+                    "id": 24,
+                    "name": "Wrenches & Spanners",
+                    "href": "/category/hand-tools/wrenches"
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "name": "Safety Equipment",
+            "href": "/category/safety",
+            "subcategories": [
+                {
+                    "id": 31,
+                    "name": "Hard Hats & Helmets",
+                    "href": "/category/safety/hard-hats"
+                },
+                {
+                    "id": 32,
+                    "name": "Safety Glasses",
+                    "href": "/category/safety/glasses"
+                },
+                {
+                    "id": 33,
+                    "name": "Gloves & Boots",
+                    "href": "/category/safety/protective-wear"
+                },
+                {
+                    "id": 34,
+                    "name": "Respiratory Protection",
+                    "href": "/category/safety/respiratory"
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "name": "Paint & Supplies",
+            "href": "/category/paint",
+            "subcategories": [
+                {
+                    "id": 41,
+                    "name": "Interior Paint",
+                    "href": "/category/paint/interior"
+                },
+                {
+                    "id": 42,
+                    "name": "Exterior Paint",
+                    "href": "/category/paint/exterior"
+                },
+                {
+                    "id": 43,
+                    "name": "Brushes & Rollers",
+                    "href": "/category/paint/brushes"
+                },
+                {
+                    "id": 44,
+                    "name": "Spray Equipment",
+                    "href": "/category/paint/spray"
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "name": "Storage & Organization",
+            "href": "/category/storage",
+            "subcategories": [
+                {
+                    "id": 51,
+                    "name": "Tool Boxes",
+                    "href": "/category/storage/toolboxes"
+                },
+                {
+                    "id": 52,
+                    "name": "Tool Chests",
+                    "href": "/category/storage/chests"
+                },
+                {
+                    "id": 53,
+                    "name": "Storage Cabinets",
+                    "href": "/category/storage/cabinets"
+                },
+                {
+                    "id": 54,
+                    "name": "Tool Bags",
+                    "href": "/category/storage/bags"
+                }
+            ]
+        },
+        {
+            "id": 6,
+            "name": "Measuring Tools",
+            "href": "/category/measuring",
+            "subcategories": [
+                {
+                    "id": 61,
+                    "name": "Tape Measures",
+                    "href": "/category/measuring/tapes"
+                },
+                {
+                    "id": 62,
+                    "name": "Levels",
+                    "href": "/category/measuring/levels"
+                },
+                {
+                    "id": 63,
+                    "name": "Laser Measurers",
+                    "href": "/category/measuring/laser"
+                },
+                {
+                    "id": 64,
+                    "name": "Calipers",
+                    "href": "/category/measuring/calipers"
+                }
+            ]
+        }
+    ]
+}
