@@ -143,9 +143,12 @@ export default function ProductPage() {
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
-                                <span className={index === categoryParts.length - 1 ? 'text-gray-900 font-medium' : ''}>
+                                <a
+                                    href={`/search?q=${encodeURIComponent(category)}`}
+                                    className="hover:text-red-500 transition-colors"
+                                >
                                     {category}
-                                </span>
+                                </a>
                             </div>
                         ))}
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
