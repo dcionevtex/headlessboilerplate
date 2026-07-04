@@ -1,30 +1,18 @@
 'use client';
 
 // ... imports
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import headerContent from '@/header-content.json';
 import { useCart } from '@/context/CartContext';
 import MiniCart from '@/components/MiniCart';
 import Navigation from '@/components/Navigation';
+import SearchAutocomplete from '@/components/SearchAutocomplete';
 import { useLocation } from '@/context/LocationContext';
 import AddressSelectorModal from '@/components/AddressSelectorModal';
 
 export default function Header() {
     const { itemCount, openCart } = useCart();
     const { addressString, openModal } = useLocation();
-    const router = useRouter();
-    const [searchQuery, setSearchQuery] = useState('');
-    const [mobileSearchQuery, setMobileSearchQuery] = useState('');
-
-    const handleSearch = (e: React.FormEvent, query: string) => {
-        e.preventDefault();
-        const trimmedQuery = query.trim();
-        if (trimmedQuery) {
-            router.push(`/search?q=${encodeURIComponent(trimmedQuery)}`);
-        }
-    };
 
     return (
         <header className="bg-white shadow-md sticky top-0 z-50">
@@ -45,34 +33,7 @@ export default function Header() {
 
                     {/* Search Bar - Full Width */}
                     <div className="flex-1 max-w-3xl">
-                        <form onSubmit={(e) => handleSearch(e, searchQuery)} className="relative">
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder={headerContent.searchPlaceholder}
-                                className="w-full px-6 py-3 pr-12 rounded-lg border-2 border-gray-200 focus:border-red-500 focus:outline-none transition-colors text-base"
-                            />
-                            <button
-                                type="submit"
-                                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-red-500 transition-colors"
-                                aria-label="Search"
-                            >
-                                <svg
-                                    className="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                    />
-                                </svg>
-                            </button>
-                        </form>
+                        <SearchAutocomplete placeholder={headerContent.searchPlaceholder} size="md" />
                     </div>
 
                     {/* Store Locator Icon */}
@@ -198,24 +159,7 @@ export default function Header() {
                     </div>
 
                     {/* Mobile Search Bar */}
-                    <form onSubmit={(e) => handleSearch(e, mobileSearchQuery)} className="relative">
-                        <input
-                            type="text"
-                            value={mobileSearchQuery}
-                            onChange={(e) => setMobileSearchQuery(e.target.value)}
-                            placeholder={headerContent.searchPlaceholder}
-                            className="w-full px-4 py-2 pr-10 rounded-lg border-2 border-gray-200 focus:border-red-500 focus:outline-none transition-colors text-sm"
-                        />
-                        <button
-                            type="submit"
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-red-500 transition-colors"
-                            aria-label="Search"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </button>
-                    </form>
+                    <SearchAutocomplete placeholder={headerContent.searchPlaceholder} size="sm" />
                 </div>
             </div>
             <AddressSelectorModal />
