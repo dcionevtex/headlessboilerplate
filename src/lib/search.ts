@@ -4,6 +4,7 @@ import { VTEXProduct } from '@/types/vtex';
 // Use Next.js API route instead of direct VTEX call to avoid CORS
 const SEARCH_API = '/api/search';
 const TOP_SEARCHES_API = '/api/top-searches';
+const FACETS_API = '/api/facets';
 
 export interface SearchProduct {
     productId: string;
@@ -47,6 +48,33 @@ export interface TopSearch {
 
 export interface TopSearchesResponse {
     searches: TopSearch[];
+}
+
+export interface FacetValue {
+    id?: string;
+    quantity: number;
+    name: string;
+    key: string;
+    value?: string;
+    selected: boolean;
+    href?: string;
+    range?: { from: number; to: number };
+}
+
+export interface Facet {
+    values: FacetValue[];
+    type: string;
+    name: string;
+    hidden: boolean;
+    key: string;
+    quantity: number;
+}
+
+export interface FacetsResponse {
+    facets: Facet[];
+    sampling: boolean;
+    breadcrumb: Array<{ name: string; href: string }>;
+    queryArgs: { query: string; selectedFacets: Array<{ key: string; value: string }> };
 }
 
 // Transform SearchProduct to VTEXProduct format for compatibility with ProductCard
@@ -178,5 +206,27 @@ export async function getTopSearches(): Promise<TopSearchesResponse> {
         console.error('Error fetching top searches:', error);
         // Return empty array on error instead of throwing
         return { searches: [] };
+    }
+}
+
+export async function getFacets(query: string): Promise<FacetsResponse> {
+    try {
+        const response = await fetch(`${FACETS_API}?query=${encodeURIComponent(query)}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Facets API error: ${response.status}`);
+        }
+
+        const data: FacetsResponse = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching facets:', error);
+        // Return empty facets on error instead of throwing
+        return { facets: [], sampling: false, breadcrumb: [], queryArgs: { query, selectedFacets: [] } };
     }
 }

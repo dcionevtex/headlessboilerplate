@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { searchProducts, getTopSearches, TopSearch } from '@/lib/search';
+import { searchProducts, getTopSearches, getFacets, TopSearch, FacetsResponse } from '@/lib/search';
 import { VTEXProduct } from '@/types/vtex';
 import PaginatedProductGrid from '@/components/PaginatedProductGrid';
 import SortDropdown from '@/components/SortDropdown';
@@ -20,6 +20,12 @@ export default function SearchPageContent() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [topSearches, setTopSearches] = useState<TopSearch[]>([]);
+    const [facets, setFacets] = useState<FacetsResponse>({
+        facets: [],
+        sampling: false,
+        breadcrumb: [],
+        queryArgs: { query: '', selectedFacets: [] },
+    });
 
     // Filter State
     const [filters, setFilters] = useState<FilterState>({
@@ -70,6 +76,14 @@ export default function SearchPageContent() {
                 if (!hasSeller) return false;
             }
 
+            // Price Range Filter
+            if (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 0) {
+                const price = product.items[0]?.sellers[0]?.commertialOffer?.Price;
+                if (price === undefined || price < filters.priceRange[0] || price > filters.priceRange[1]) {
+                    return false;
+                }
+            }
+
             return true;
         });
     }, [products, filters]);
@@ -90,23 +104,35 @@ export default function SearchPageContent() {
             return;
         }
 
+        let cancelled = false;
+
         const fetchSearchResults = async () => {
             setLoading(true);
             setError(false);
 
             try {
-                const data = await searchProducts(query);
-                setProducts(data.products || []);
-                setTotalResults(data.recordsFiltered || 0);
+                const [productsData, facetsData] = await Promise.all([
+                    searchProducts(query, 1, 100),
+                    getFacets(query),
+                ]);
+                if (cancelled) return;
+                setProducts(productsData.products || []);
+                setTotalResults(productsData.recordsFiltered || 0);
+                setFacets(facetsData);
             } catch (err) {
+                if (cancelled) return;
                 console.error('Search error:', err);
                 setError(true);
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         };
 
         fetchSearchResults();
+
+        return () => {
+            cancelled = true;
+        };
     }, [query]);
 
     const handleRetry = () => {
@@ -160,6 +186,7 @@ export default function SearchPageContent() {
                         <div className="flex flex-col lg:flex-row gap-8">
                             {/* Sidebar Filters - Pass original products to calculate total available facets */}
                             <SearchSidebar
+                                facets={facets}
                                 products={products}
                                 filters={filters}
                                 onFilterChange={setFilters}
