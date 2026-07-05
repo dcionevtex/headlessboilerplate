@@ -1,6 +1,7 @@
 'use client';
 
 // ... imports
+import { useState } from 'react';
 import Image from 'next/image';
 import headerContent from '@/header-content.json';
 import { useCart } from '@/context/CartContext';
@@ -9,10 +10,14 @@ import Navigation from '@/components/Navigation';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
 import { useLocation } from '@/context/LocationContext';
 import AddressSelectorModal from '@/components/AddressSelectorModal';
+import { useAuth } from '@/context/AuthContext';
+import AuthModal from '@/components/AuthModal';
 
 export default function Header() {
     const { itemCount, openCart } = useCart();
     const { addressString, openModal } = useLocation();
+    const { isAuthenticated, email } = useAuth();
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
     return (
         <header className="bg-white shadow-md sticky top-0 z-50">
@@ -66,6 +71,40 @@ export default function Header() {
                             {addressString}
                         </span>
                     </button>
+
+                    {/* Account Icon */}
+                    {isAuthenticated ? (
+                        <a
+                            href="/my-account"
+                            className="flex-shrink-0 flex flex-col items-start px-3 py-1 bg-gray-50 hover:bg-red-50 rounded-lg border border-gray-100 hover:border-red-200 transition-all group"
+                        >
+                            <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-gray-400 group-hover:text-red-400 transition-colors">
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span>Account</span>
+                            </div>
+                            <span className="text-sm font-semibold text-gray-800 line-clamp-1 max-w-[150px]">
+                                {email}
+                            </span>
+                        </a>
+                    ) : (
+                        <button
+                            onClick={() => setIsAuthModalOpen(true)}
+                            className="flex-shrink-0 flex flex-col items-start px-3 py-1 bg-gray-50 hover:bg-red-50 rounded-lg border border-gray-100 hover:border-red-200 transition-all group"
+                            aria-label="Sign In"
+                        >
+                            <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-gray-400 group-hover:text-red-400 transition-colors">
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span>Account</span>
+                            </div>
+                            <span className="text-sm font-semibold text-gray-800 line-clamp-1 max-w-[150px]">
+                                Sign In
+                            </span>
+                        </button>
+                    )}
 
                     {/* Cart Icon */}
                     <button
@@ -132,6 +171,29 @@ export default function Header() {
                                 </svg>
                             </button>
 
+                            {/* Account Icon (Mobile) */}
+                            {isAuthenticated ? (
+                                <a
+                                    href="/my-account"
+                                    className="p-2 text-gray-700 hover:text-red-500 transition-colors relative"
+                                    aria-label="My Account"
+                                >
+                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </a>
+                            ) : (
+                                <button
+                                    onClick={() => setIsAuthModalOpen(true)}
+                                    className="p-2 text-gray-700 hover:text-red-500 transition-colors relative"
+                                    aria-label="Sign In"
+                                >
+                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </button>
+                            )}
+
                             <button
                                 onClick={openCart}
                                 className="flex-shrink-0 p-2 text-gray-700 hover:text-red-500 transition-colors relative"
@@ -163,6 +225,7 @@ export default function Header() {
                 </div>
             </div>
             <AddressSelectorModal />
+            <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
         </header>
     );
 }

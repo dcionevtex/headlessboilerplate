@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 
 import { CartProvider } from "@/context/CartContext";
 import { LocationProvider } from "@/context/LocationContext";
+import { AuthProvider } from "@/context/AuthContext";
 import GoogleTagManager from "@/components/GoogleTagManager";
 
 export default function RootLayout({
@@ -32,11 +33,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <GoogleTagManager />
-        <CartProvider>
-          <LocationProvider>
-            {children}
-          </LocationProvider>
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <LocationProvider>
+              {children}
+            </LocationProvider>
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );
