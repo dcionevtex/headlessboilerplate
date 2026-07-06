@@ -12,6 +12,7 @@ import { useLocation } from '@/context/LocationContext';
 import AddressSelectorModal from '@/components/AddressSelectorModal';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from '@/components/AuthModal';
+import TopBar from '@/components/TopBar';
 
 export default function Header() {
     const { itemCount, openCart } = useCart();
@@ -20,7 +21,9 @@ export default function Header() {
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
     return (
-        <header className="bg-white shadow-md sticky top-0 z-50">
+        <>
+            <TopBar />
+            <header className="bg-white shadow-md sticky top-0 z-50">
             <div className="container mx-auto px-4 py-4">
                 {/* Desktop: Row 1 (Logo - Search - Cart) */}
                 <div className="hidden lg:flex items-center justify-between gap-6 mb-3">
@@ -226,6 +229,7 @@ export default function Header() {
             </div>
             <AddressSelectorModal />
             <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-        </header>
+            </header>
+        </>
     );
 }

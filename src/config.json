@@ -20,5 +20,9 @@
             "low": 10,
             "medium": 100
         }
+    },
+    "topBar": {
+        "enabled": true,
+        "message": "This is a demo account using a VTEX headless implementation"
     }
 }

@@ -211,6 +211,35 @@ Controls whether seller information is displayed throughout the application. Thi
 }
 ```
 
+### Top Bar Settings
+
+#### `topBar.enabled`
+
+**Type:** `boolean`
+**Default:** `true`
+
+**Description:**
+Controls whether the site-wide announcement bar is shown above the header (e.g. a promo message or, for a
+POC/demo store, a disclaimer). When `false`, or when `topBar.message` is empty, the bar renders nothing.
+
+#### `topBar.message`
+
+**Type:** `string`
+**Default:** `""`
+
+**Description:**
+The text displayed inside the top bar when `topBar.enabled` is `true`. Plain text only (no HTML).
+
+**Example:**
+```json
+{
+    "topBar": {
+        "enabled": true,
+        "message": "This is a demo account using a VTEX headless implementation"
+    }
+}
+```
+
 ## Usage
 
 To modify the configuration:
@@ -243,6 +272,10 @@ To modify the configuration:
 ### Seller Display (`marketplace.showSellerId`)
 - **ProductCard** (`src/components/ProductCard.tsx`): Shows/hides seller name
 - **MiniCart** (`src/components/MiniCart.tsx`): Toggles seller grouping
+
+### Top Bar (`topBar.enabled` / `topBar.message`)
+- **TopBar** (`src/components/TopBar.tsx`): Renders (or hides) the announcement bar
+- **Header** (`src/components/Header.tsx`): Renders TopBar above the sticky header on every page
 
 ## Future Configuration Options
 
