@@ -3,12 +3,12 @@
         {
             "id": 1,
             "name": "Power Tools",
-            "href": "/category/power-tools",
+            "href": "/search?q=Power%20Tools",
             "subcategories": [
                 {
                     "id": 11,
                     "name": "Drills & Drivers",
-                    "href": "/category/power-tools/drills"
+                    "href": "/search?q=Power%20Tools"
                 },
                 {
                     "id": 12,
@@ -57,7 +57,7 @@
         {
             "id": 3,
             "name": "Safety Equipment",
-            "href": "/category/safety",
+            "href": "/search?q=Safety",
             "subcategories": [
                 {
                     "id": 31,
