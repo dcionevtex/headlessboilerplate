@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import pwaContent from "@/pwa-content.json";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,14 +14,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DIY Tools Co. - Premium Tools for Makers & Builders",
-  description: "Discover high-quality tools and equipment for DIY enthusiasts and professionals. Build your dream project with our premium selection.",
+  title: pwaContent.name,
+  description: pwaContent.description,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: pwaContent.shortName,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: pwaContent.themeColor,
 };
 
 import { CartProvider } from "@/context/CartContext";
 import { LocationProvider } from "@/context/LocationContext";
 import { AuthProvider } from "@/context/AuthContext";
 import GoogleTagManager from "@/components/GoogleTagManager";
+import PWARegister from "@/components/PWARegister";
 
 export default function RootLayout({
   children,
@@ -33,6 +44,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <GoogleTagManager />
+        <PWARegister />
         <AuthProvider>
           <CartProvider>
             <LocationProvider>

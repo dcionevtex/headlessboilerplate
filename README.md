@@ -60,6 +60,8 @@ src/
 3. **Open Browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
+The site is also installable as an app straight from the browser (Add to Home Screen on mobile, install from the address bar on desktop) — see [PWA.md](PWA.md) for how to install and how it's wired up.
+
 ## 🔧 Configuration
 
 ### VTEX API Endpoint
