@@ -14,6 +14,13 @@ import content from '@/site-content.json';
 export default function SearchPageContent() {
     const searchParams = useSearchParams();
     const query = searchParams.get('q') || '';
+    const category = searchParams.get('category') || ''; // e.g. "pets/dogs" - category browsing, not a free-text query
+    const hasActiveBrowse = Boolean(query || category);
+    // Display label for category browsing: last slug segment, de-hyphenated and title-cased
+    // ("pets/dogs" -> "Dogs"). Purely cosmetic - the slug itself drives the VTEX filter.
+    const categoryLabel = category
+        ? category.split('/').filter(Boolean).pop()!.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+        : '';
 
     const [products, setProducts] = useState<VTEXProduct[]>([]);
     const [totalResults, setTotalResults] = useState(0);
@@ -30,18 +37,17 @@ export default function SearchPageContent() {
     // Filter State
     const [filters, setFilters] = useState<FilterState>({
         brand: [],
-        category: [],
-        subcategory: [],
+        categoryByDepth: {},
         seller: [],
         priceRange: [0, 0]
     });
 
     const { search } = content;
 
-    // Reset filters when query changes
+    // Reset filters when query or category changes
     useEffect(() => {
-        setFilters({ brand: [], category: [], subcategory: [], seller: [], priceRange: [0, 0] });
-    }, [query]);
+        setFilters({ brand: [], categoryByDepth: {}, seller: [], priceRange: [0, 0] });
+    }, [query, category]);
 
     // 1. Filter Products
     const filteredProducts = useMemo(() => {
@@ -51,22 +57,20 @@ export default function SearchPageContent() {
                 return false;
             }
 
-            // Category Filter
-            if (filters.category.length > 0) {
-                const inCategory = product.categories?.some(path => {
-                    const parts = path.split('/').filter(Boolean);
-                    return parts.length > 0 && filters.category.includes(parts[0]);
+            // Category Filter, depth-agnostic. Each selected depth must independently match (AND
+            // across depths, same as combining with brand/seller). Case-insensitive on purpose: the
+            // checkbox labels come from the facets API, while a product's `categories` path can come
+            // back in a different case for the same category.
+            const activeDepthEntries = Object.entries(filters.categoryByDepth).filter(([, values]) => values.length > 0);
+            if (activeDepthEntries.length > 0) {
+                const matchesEveryActiveDepth = activeDepthEntries.every(([depthStr, values]) => {
+                    const depth = parseInt(depthStr, 10);
+                    return product.categories?.some(path => {
+                        const parts = path.split('/').filter(Boolean);
+                        return parts.length >= depth && values.some(v => v.toLowerCase() === parts[depth - 1].toLowerCase());
+                    });
                 });
-                if (!inCategory) return false;
-            }
-
-            // Subcategory Filter
-            if (filters.subcategory.length > 0) {
-                const inSubcategory = product.categories?.some(path => {
-                    const parts = path.split('/').filter(Boolean);
-                    return parts.length > 1 && filters.subcategory.includes(parts[1]);
-                });
-                if (!inSubcategory) return false;
+                if (!matchesEveryActiveDepth) return false;
             }
 
             // Seller Filter
@@ -97,9 +101,9 @@ export default function SearchPageContent() {
         fetchTopSearches();
     }, []);
 
-    // Fetch search results when query changes
+    // Fetch search results when query or category changes
     useEffect(() => {
-        if (!query) {
+        if (!query && !category) {
             setLoading(false);
             return;
         }
@@ -112,8 +116,8 @@ export default function SearchPageContent() {
 
             try {
                 const [productsData, facetsData] = await Promise.all([
-                    searchProducts(query, 1, 100),
-                    getFacets(query),
+                    searchProducts(query, 1, 100, { category }),
+                    getFacets(query, { category }),
                 ]);
                 if (cancelled) return;
                 setProducts(productsData.products || []);
@@ -133,7 +137,7 @@ export default function SearchPageContent() {
         return () => {
             cancelled = true;
         };
-    }, [query]);
+    }, [query, category]);
 
     const handleRetry = () => {
         window.location.reload();
@@ -155,14 +159,14 @@ export default function SearchPageContent() {
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
-                        <span className="text-gray-900 font-medium">Search Results</span>
+                        <span className="text-gray-900 font-medium">{category ? categoryLabel : 'Search Results'}</span>
                     </nav>
 
                     {/* Search Header */}
-                    {query && (
+                    {hasActiveBrowse && (
                         <div className="mb-8">
                             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                                {search.searchingFor} &quot;{query}&quot;
+                                {category ? categoryLabel : <>{search.searchingFor} &quot;{query}&quot;</>}
                             </h1>
                             {!loading && !error && (
                                 <p className="text-gray-600">
@@ -190,6 +194,7 @@ export default function SearchPageContent() {
                                 products={products}
                                 filters={filters}
                                 onFilterChange={setFilters}
+                                categoryBrowseDepth={category ? category.split('/').filter(Boolean).length : 0}
                             />
 
                             {/* Main Content */}
@@ -200,7 +205,7 @@ export default function SearchPageContent() {
                     )}
 
                     {/* Fallback for no data or error (reusing previous empty state logic if empty) */}
-                    {!loading && !error && products.length === 0 && query && (
+                    {!loading && !error && products.length === 0 && hasActiveBrowse && (
                         <div className="max-w-2xl mx-auto text-center py-20">
                             {/* Empty State SVG and Message */}
                             <svg className="w-20 h-20 text-gray-400 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -232,8 +237,8 @@ export default function SearchPageContent() {
                         </div>
                     )}
 
-                    {/* Top Searches when no query */}
-                    {!query && !loading && (
+                    {/* Top Searches when no query and no category */}
+                    {!hasActiveBrowse && !loading && (
                         <div className="text-center py-20">
                             <svg className="w-20 h-20 text-gray-400 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

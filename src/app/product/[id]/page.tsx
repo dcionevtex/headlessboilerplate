@@ -120,10 +120,17 @@ export default function ProductPage() {
         );
     }
 
-    // Build breadcrumb from categories
+    // Build breadcrumb from categories. Each link browses the category via Intelligent Search's
+    // hierarchical path-segment facets (?category=pets/dogs - see api/search/route.ts), not a
+    // free-text query, which would only match products whose name contains the category word.
+    // The parent levels must be included for a subcategory to filter correctly.
     const categories = product.categories || [];
     const categoryPath = categories[0] || '';
     const categoryParts = categoryPath.split('/').filter(Boolean);
+    // VTEX does NOT collapse consecutive special characters: "Fresh & Chilled Food" slugifies to
+    // "fresh---chilled-food" (three hyphens). A collapsing regex (`[^a-z0-9]+`) produces a slug
+    // that silently returns zero results.
+    const slugify = (name: string) => name.toLowerCase().trim().replace(/[^a-z0-9]/g, '-').replace(/^-+|-+$/g, '');
 
     return (
         <>
@@ -144,7 +151,7 @@ export default function ProductPage() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                                 <a
-                                    href={`/search?q=${encodeURIComponent(category)}`}
+                                    href={`/search?category=${encodeURIComponent(categoryParts.slice(0, index + 1).map(slugify).join('/'))}`}
                                     className="hover:text-red-500 transition-colors"
                                 >
                                     {category}

@@ -149,10 +149,26 @@ function mapSearchProductToVTEX(searchProduct: SearchProduct): VTEXProduct {
     };
 }
 
+export interface SearchOptions {
+    /** Slash-separated category slug path (e.g. "pets/dogs") for category browsing instead of
+     * a free-text query - see api/search/route.ts for why this needs its own param. */
+    category?: string;
+}
+
+/** Turns "pets/dogs" into Intelligent Search's "category-1/pets/category-2/dogs" facet path. */
+export function buildCategoryFacetPath(category: string): string {
+    return category
+        .split('/')
+        .filter(Boolean)
+        .map((slug, index) => `category-${index + 1}/${encodeURIComponent(slug)}`)
+        .join('/');
+}
+
 export async function searchProducts(
     query: string,
     page: number = 1,
-    count: number = 24
+    count: number = 24,
+    options?: SearchOptions
 ): Promise<{ products: VTEXProduct[]; recordsFiltered: number }> {
     try {
         const params = new URLSearchParams({
@@ -160,6 +176,7 @@ export async function searchProducts(
             count: count.toString(),
             page: page.toString(),
         });
+        if (options?.category) params.set('category', options.category);
 
         const response = await fetch(`${SEARCH_API}?${params}`, {
             method: 'GET',
@@ -209,9 +226,12 @@ export async function getTopSearches(): Promise<TopSearchesResponse> {
     }
 }
 
-export async function getFacets(query: string): Promise<FacetsResponse> {
+export async function getFacets(query: string, options?: SearchOptions): Promise<FacetsResponse> {
     try {
-        const response = await fetch(`${FACETS_API}?query=${encodeURIComponent(query)}`, {
+        const params = new URLSearchParams({ query });
+        if (options?.category) params.set('category', options.category);
+
+        const response = await fetch(`${FACETS_API}?${params}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

@@ -7,8 +7,9 @@ import config from '@/config.json';
 
 export interface FilterState {
     brand: string[];
-    category: string[];
-    subcategory: string[];
+    /** Selected category values keyed by 1-based depth (1 = department, 2 = subcategory, 3+ =
+     * deeper levels). Not hardcoded to 2 levels because real VTEX category trees often go deeper. */
+    categoryByDepth: Record<number, string[]>;
     seller: string[];
     priceRange: [number, number];
 }
@@ -18,6 +19,11 @@ interface SearchSidebarProps {
     products: VTEXProduct[];
     filters: FilterState;
     onFilterChange: (filters: FilterState) => void;
+    /** How many category levels are already fixed by a category URL (?category=pets is 1,
+     * ?category=pets/dogs is 2), 0 for a free-text search. Those depths are not offered as
+     * checkboxes - an already-chosen (or sibling) level never makes sense as a filter, and VTEX's
+     * department facet doesn't reliably respect that scoping anyway. */
+    categoryBrowseDepth?: number;
 }
 
 interface FilterOption {
@@ -39,12 +45,14 @@ const getCategoryFacetByDepth = (facets: Facet[], depth: number): Facet | undefi
     });
 };
 
-export default function SearchSidebar({ facets, products, filters, onFilterChange }: SearchSidebarProps) {
-    // Fallback facets derived from loaded products - used only when the real VTEX facet group is missing
+const MAX_CATEGORY_DEPTH = 10; // generous ceiling - real category trees won't get anywhere near this
+
+export default function SearchSidebar({ facets, products, filters, onFilterChange, categoryBrowseDepth = 0 }: SearchSidebarProps) {
+    // Fallback facets derived from loaded products - used only when the real VTEX facet group is
+    // missing. Depth-agnostic: one Set of values per category depth.
     const fallbackFacets = useMemo(() => {
         const brands = new Set<string>();
-        const categories = new Set<string>();
-        const subcategories = new Set<string>();
+        const categoriesByDepth = new Map<number, Set<string>>();
         let minPrice = Infinity;
         let maxPrice = 0;
 
@@ -55,8 +63,11 @@ export default function SearchSidebar({ facets, products, filters, onFilterChang
             if (product.categories) {
                 product.categories.forEach(path => {
                     const parts = path.split('/').filter(Boolean);
-                    if (parts.length > 0) categories.add(parts[0]);
-                    if (parts.length > 1) subcategories.add(parts[1]);
+                    parts.forEach((part, i) => {
+                        const depth = i + 1;
+                        if (!categoriesByDepth.has(depth)) categoriesByDepth.set(depth, new Set());
+                        categoriesByDepth.get(depth)!.add(part);
+                    });
                 });
             }
 
@@ -67,8 +78,7 @@ export default function SearchSidebar({ facets, products, filters, onFilterChang
 
         return {
             brands: Array.from(brands).sort(),
-            categories: Array.from(categories).sort(),
-            subcategories: Array.from(subcategories).sort(),
+            categoriesByDepth,
             minPrice: minPrice === Infinity ? 0 : Math.floor(minPrice),
             maxPrice: Math.ceil(maxPrice),
         };
@@ -89,8 +99,27 @@ export default function SearchSidebar({ facets, products, filters, onFilterChang
     // exclude those so we don't render an all-unchecked group for a filter that's already applied.
     const visibleFacets = useMemo(() => (facets.facets || []).filter(f => !f.hidden), [facets]);
 
-    const categoryFacet = useMemo(() => getCategoryFacetByDepth(visibleFacets, 1), [visibleFacets]);
-    const subcategoryFacet = useMemo(() => getCategoryFacetByDepth(visibleFacets, 2), [visibleFacets]);
+    const toOptions = (values: FacetValue[]): FilterOption[] =>
+        values.map(v => ({ value: v.name, quantity: v.quantity }));
+
+    // One section per remaining category depth, starting right after whatever's already fixed by
+    // the category URL, and continuing while a deeper level actually has values (real facet or
+    // fallback). Each depth is independently selectable; selections across depths AND together.
+    const categoryDepthOptions = useMemo(() => {
+        const result: { depth: number; options: FilterOption[] }[] = [];
+        for (let depth = categoryBrowseDepth + 1; depth <= MAX_CATEGORY_DEPTH; depth++) {
+            const facet = getCategoryFacetByDepth(visibleFacets, depth);
+            const fallbackValues = fallbackFacets.categoriesByDepth.get(depth);
+            const options: FilterOption[] = facet && facet.values.length > 0
+                ? toOptions(facet.values)
+                : fallbackValues
+                    ? Array.from(fallbackValues).sort().map(value => ({ value }))
+                    : [];
+            if (options.length === 0) break; // a hierarchical tree can't have a populated depth N+1 under an empty depth N
+            result.push({ depth, options });
+        }
+        return result;
+    }, [visibleFacets, categoryBrowseDepth, fallbackFacets.categoriesByDepth]);
 
     const brandFacet = useMemo(
         () => visibleFacets.find(f => f.name.toLowerCase() === 'brand'),
@@ -113,23 +142,12 @@ export default function SearchSidebar({ facets, products, filters, onFilterChang
         });
     }, [priceRangeFacet]);
 
-    const toOptions = (values: FacetValue[]): FilterOption[] =>
-        values.map(v => ({ value: v.name, quantity: v.quantity }));
-
-    const categoryOptions: FilterOption[] = categoryFacet && categoryFacet.values.length > 0
-        ? toOptions(categoryFacet.values)
-        : fallbackFacets.categories.map(value => ({ value }));
-
-    const subcategoryOptions: FilterOption[] = subcategoryFacet && subcategoryFacet.values.length > 0
-        ? toOptions(subcategoryFacet.values)
-        : fallbackFacets.subcategories.map(value => ({ value }));
-
     const brandOptions: FilterOption[] = brandFacet && brandFacet.values.length > 0
         ? toOptions(brandFacet.values)
         : fallbackFacets.brands.map(value => ({ value }));
 
     // Handle Checkbox Changes
-    const handleCheckboxChange = (key: 'brand' | 'category' | 'subcategory' | 'seller', value: string) => {
+    const handleCheckboxChange = (key: 'brand' | 'seller', value: string) => {
         const current = filters[key];
         const updated = current.includes(value)
             ? current.filter(item => item !== value)
@@ -138,6 +156,18 @@ export default function SearchSidebar({ facets, products, filters, onFilterChang
         onFilterChange({
             ...filters,
             [key]: updated
+        });
+    };
+
+    const handleCategoryChange = (depth: number, value: string) => {
+        const current = filters.categoryByDepth[depth] || [];
+        const updated = current.includes(value)
+            ? current.filter(item => item !== value)
+            : [...current, value];
+
+        onFilterChange({
+            ...filters,
+            categoryByDepth: { ...filters.categoryByDepth, [depth]: updated },
         });
     };
 
@@ -152,7 +182,7 @@ export default function SearchSidebar({ facets, products, filters, onFilterChang
     if (products.length === 0) return null;
 
     const hasActiveFilters = filters.brand.length > 0 || filters.seller.length > 0 ||
-        filters.category.length > 0 || filters.subcategory.length > 0 ||
+        Object.values(filters.categoryByDepth).some(values => values.length > 0) ||
         filters.priceRange[0] !== 0 || filters.priceRange[1] !== 0;
 
     return (
@@ -162,49 +192,28 @@ export default function SearchSidebar({ facets, products, filters, onFilterChang
                 <span className="font-bold text-gray-900">Filters</span>
             </div>
 
-            {/* Categories */}
-            {categoryOptions.length > 0 && (
-                <div>
-                    <h3 className="font-semibold text-gray-900 mb-3">Category</h3>
+            {/* Category depths - one section per level beyond what the category URL already fixes.
+                First shown depth is labeled "Category", every deeper one "Subcategory". */}
+            {categoryDepthOptions.map(({ depth, options }, index) => (
+                <div key={depth}>
+                    <h3 className="font-semibold text-gray-900 mb-3">{index === 0 ? 'Category' : 'Subcategory'}</h3>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {categoryOptions.map(cat => (
-                            <label key={cat.value} className="flex items-center gap-2 cursor-pointer group">
+                        {options.map(opt => (
+                            <label key={opt.value} className="flex items-center gap-2 cursor-pointer group">
                                 <input
                                     type="checkbox"
-                                    checked={filters.category.includes(cat.value)}
-                                    onChange={() => handleCheckboxChange('category', cat.value)}
+                                    checked={(filters.categoryByDepth[depth] || []).includes(opt.value)}
+                                    onChange={() => handleCategoryChange(depth, opt.value)}
                                     className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 transition-colors"
                                 />
                                 <span className="text-sm text-gray-600 group-hover:text-red-500 transition-colors">
-                                    {cat.value}{cat.quantity !== undefined && ` (${cat.quantity})`}
+                                    {opt.value}{opt.quantity !== undefined && ` (${opt.quantity})`}
                                 </span>
                             </label>
                         ))}
                     </div>
                 </div>
-            )}
-
-            {/* Subcategories */}
-            {subcategoryOptions.length > 0 && (
-                <div>
-                    <h3 className="font-semibold text-gray-900 mb-3">Subcategory</h3>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {subcategoryOptions.map(subcat => (
-                            <label key={subcat.value} className="flex items-center gap-2 cursor-pointer group">
-                                <input
-                                    type="checkbox"
-                                    checked={filters.subcategory.includes(subcat.value)}
-                                    onChange={() => handleCheckboxChange('subcategory', subcat.value)}
-                                    className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 transition-colors"
-                                />
-                                <span className="text-sm text-gray-600 group-hover:text-red-500 transition-colors">
-                                    {subcat.value}{subcat.quantity !== undefined && ` (${subcat.quantity})`}
-                                </span>
-                            </label>
-                        ))}
-                    </div>
-                </div>
-            )}
+            ))}
 
             {/* Brands */}
             {brandOptions.length > 0 && (
@@ -291,7 +300,7 @@ export default function SearchSidebar({ facets, products, filters, onFilterChang
             {/* Clear Filters */}
             {hasActiveFilters && (
                 <button
-                    onClick={() => onFilterChange({ brand: [], category: [], subcategory: [], seller: [], priceRange: [0, 0] })}
+                    onClick={() => onFilterChange({ brand: [], categoryByDepth: {}, seller: [], priceRange: [0, 0] })}
                     className="text-sm text-red-600 hover:text-red-700 font-medium hover:underline pt-2"
                 >
                     Clear all filters
