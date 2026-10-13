@@ -24,5 +24,11 @@
     "topBar": {
         "enabled": true,
         "message": "This is a demo account using a VTEX headless implementation"
+    },
+    "demoConsent": {
+        "enabled": true,
+        "title": "This is a test store",
+        "body": "This storefront is a VTEX headless demo. Orders placed here are not real, are not charged as purchases and products will not be delivered.",
+        "confirm": "I understand this is a test store and products will not be delivered"
     }
 }

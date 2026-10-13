@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { VTEXProduct } from '@/types/vtex';
+import { getVariantLabel, getProductHref } from '@/lib/search';
 import { addItemToCart } from '@/lib/cart';
 import { useCart } from '@/context/CartContext';
 import config from '@/config.json';
@@ -18,6 +19,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
     // Get the first item and its details
     const firstItem = product.items[0];
+    const variantLabel = getVariantLabel(product);
     const firstSeller = firstItem?.sellers?.find(s => s.sellerDefault) || firstItem?.sellers?.[0];
     const commercialOffer = firstSeller?.commertialOffer;
     const commercialOfferInstallments = commercialOffer?.Installments || [];
@@ -62,7 +64,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     return (
         <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
             {/* Product Image */}
-            <a href={`/product/${product.productId}`} className="block relative aspect-square bg-gray-100 overflow-hidden">
+            <a href={getProductHref(product)} className="block relative aspect-square bg-gray-100 overflow-hidden">
                 {image && (
                     <Image
                         src={image.imageUrl}
@@ -98,9 +100,10 @@ export default function ProductCard({ product }: ProductCardProps) {
                 )}
 
                 {/* Product Name */}
-                <a href={`/product/${product.productId}`}>
+                <a href={getProductHref(product)}>
                     <h3 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-2 min-h-[3.5rem] hover:text-red-500 transition-colors">
                         {product.productName}
+                        {variantLabel && <span className="text-gray-500 font-normal"> · {variantLabel}</span>}
                     </h3>
                 </a>
 

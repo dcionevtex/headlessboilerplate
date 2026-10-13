@@ -1,5 +1,5 @@
 import config from '@/config.json';
-import { VTEXProduct } from '@/types/vtex';
+import { VTEXProduct, SKUSpecification } from '@/types/vtex';
 
 // Use Next.js API route instead of direct VTEX call to avoid CORS
 const SEARCH_API = '/api/search';
@@ -12,10 +12,12 @@ export interface SearchProduct {
     brand: string;
     linkText: string;
     categories: string[];
+    description?: string;
+    skuSpecifications?: SKUSpecification[];
     items: Array<{
         itemId: string;
         name: string;
-        variations?: string[];
+        variations?: RawVariation[];
         images: Array<{
             imageUrl: string;
             imageTag: string;
@@ -77,28 +79,59 @@ export interface FacetsResponse {
     queryArgs: { query: string; selectedFacets: Array<{ key: string; value: string }> };
 }
 
-// Transform SearchProduct to VTEXProduct format for compatibility with ProductCard
-function mapSearchProductToVTEX(searchProduct: SearchProduct): VTEXProduct {
+type RawVariation = string | { name: string; values: string[] };
+
+// Intelligent Search returns variations as [{ name, values }]; the legacy Catalog API (used by
+// the PDP) returns ["Colour"] with values under item["Colour"]. Normalize both to names + map.
+export function normalizeVariations(item: { variations?: RawVariation[] }) {
+    const variationNames: string[] = [];
+    const variationValues: Record<string, string[]> = {};
+    (item.variations || []).forEach(variation => {
+        const name = typeof variation === 'string' ? variation : variation.name;
+        const values = typeof variation === 'string'
+            ? (item as Record<string, unknown>)[variation]
+            : variation.values;
+        if (!name) return;
+        variationNames.push(name);
+        if (Array.isArray(values)) variationValues[name] = values;
+    });
+    return { variationNames, variationValues };
+}
+
+// Variant values a search result is pinned to (e.g. "Black" when Intelligent Search splits a
+// product per Colour): every SKU specification with a single value, unless the product name
+// already says it. Dimension-agnostic - works for whatever specification the split uses.
+export function getVariantLabel(product: VTEXProduct): string {
+    const name = product.productName.toLowerCase();
+    return (product.skuSpecifications || [])
+        .filter(spec => spec.values.length === 1 && !name.includes(spec.values[0].name.toLowerCase()))
+        .map(spec => spec.values[0].name)
+        .join(' · ');
+}
+
+// Links a pinned result to its own SKU so the PDP opens on the variant the shopper clicked
+export function getProductHref(product: VTEXProduct): string {
+    const firstItemId = product.items[0]?.itemId;
+    return getVariantLabel(product) && firstItemId
+        ? `/product/${product.productId}?skuId=${firstItemId}`
+        : `/product/${product.productId}`;
+}
+
+// Transform SearchProduct to VTEXProduct format for compatibility with ProductCard and PDP
+export function mapSearchProductToVTEX(searchProduct: SearchProduct): VTEXProduct {
     return {
         ...searchProduct,
         productReference: searchProduct.productId,
         categoryId: '',
         categories: searchProduct.categories || [],
-        description: '',
+        description: searchProduct.description || '',
         items: searchProduct.items.map(item => {
-            // Extract variation values dynamically
-            const variationValues: Record<string, string[]> = {};
-            if (item.variations) {
-                item.variations.forEach(variation => {
-                    if (item[variation]) {
-                        variationValues[variation] = item[variation];
-                    }
-                });
-            }
+            const { variationNames, variationValues } = normalizeVariations(item);
 
             return {
                 ...item,
-                nameComplete: item.name,
+                // Product + SKU name (e.g. "Rainboot ... Size 40"); item.name alone may be just "Size 40"
+                nameComplete: item.nameComplete || item.name,
                 complementName: '',
                 ean: '',
                 referenceId: [{ Key: 'RefId', Value: searchProduct.productId }],
@@ -106,7 +139,7 @@ function mapSearchProductToVTEX(searchProduct: SearchProduct): VTEXProduct {
                 unitMultiplier: 1,
                 modalType: null,
                 isKit: false,
-                variations: item.variations,
+                variations: variationNames,
                 variationValues,
                 images: item.images.map((img, idx) => ({
                     imageId: `${item.itemId}-${idx}`,

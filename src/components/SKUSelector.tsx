@@ -8,49 +8,97 @@ interface SKUSelectorProps {
     onSelectSKU: (itemId: string) => void;
 }
 
-export default function SKUSelector({ items, selectedSKU, onSelectSKU }: SKUSelectorProps) {
-    if (!items || items.length <= 1) {
+const isItemAvailable = (item: VTEXItem) =>
+    item.sellers.length > 0 && item.sellers[0].commertialOffer.AvailableQuantity > 0;
+
+const variantValue = (item: VTEXItem, dimension: string) => item.variationValues?.[dimension]?.[0];
+
+export default function SKUSelector(props: SKUSelectorProps) {
+    if (!props.items || props.items.length <= 1) {
         return null;
     }
 
-    // Try to find explicit variation metadata
-    const firstItem = items[0];
-    const variationName = firstItem.variations?.[0]; // e.g. "Color" or "Size"
+    // Dimensions (e.g. "Colour", "Memory Size") that actually carry values on the SKUs
+    const dimensions = (props.items[0].variations || [])
+        .filter(dimension => props.items.some(item => variantValue(item, dimension)));
 
-    // Determine Label
-    let label = 'Select Option';
+    return dimensions.length > 0
+        ? <VariantMatrixSelector {...props} dimensions={dimensions} />
+        : <FallbackSelector {...props} />;
+}
 
-    // Helper to get display name for an item
-    const getDisplayName = (item: VTEXItem): string => {
-        // Strategy 1: Explicit Variation Value
-        if (variationName && item.variationValues?.[variationName]?.[0]) {
-            return item.variationValues[variationName][0];
-        }
+// One row of options per dimension; picking a value keeps the other dimensions' current
+// values when that combination exists, otherwise jumps to any SKU carrying the value.
+function VariantMatrixSelector({ items, selectedSKU, onSelectSKU, dimensions }: SKUSelectorProps & { dimensions: string[] }) {
+    const selectedItem = items.find(item => item.itemId === selectedSKU) || items[0];
 
-        // Strategy 2: Common Prefix Removal (Fallback)
-        return item.complementName || item.name;
+    const resolveSKU = (dimension: string, value: string) => {
+        const withValue = items.filter(item => variantValue(item, dimension) === value);
+        const sameOthers = withValue.find(item => dimensions.every(d =>
+            d === dimension || variantValue(item, d) === variantValue(selectedItem, d)));
+        return sameOthers || withValue.find(isItemAvailable) || withValue[0];
     };
 
-    // Calculate Prefix for Fallback Strategy only if no explicit variation
-    let prefix = '';
-    if (!variationName) {
-        const names = items.map(i => i.complementName || i.name);
-        if (names.length > 0) {
-            prefix = names[0];
-            for (let i = 1; i < names.length; i++) {
-                while (names[i].indexOf(prefix) !== 0) {
-                    prefix = prefix.substring(0, prefix.length - 1);
-                    if (prefix === '') break;
-                }
-            }
-        }
+    return (
+        <div className="space-y-4">
+            {dimensions.map(dimension => {
+                const values = [...new Set(items.map(item => variantValue(item, dimension)).filter(Boolean))] as string[];
+                return (
+                    <div key={dimension}>
+                        <label className="block text-sm font-semibold text-gray-900 mb-3">
+                            {dimension}: <span className="font-normal text-gray-600">{variantValue(selectedItem, dimension)}</span>
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                            {values.map(value => {
+                                const target = resolveSKU(dimension, value);
+                                const isSelected = variantValue(selectedItem, dimension) === value;
+                                const isAvailable = isItemAvailable(target);
+                                return (
+                                    <button
+                                        key={value}
+                                        onClick={() => onSelectSKU(target.itemId)}
+                                        disabled={!isAvailable}
+                                        className={`px-4 py-2 rounded-lg border-2 font-medium text-sm transition-all ${isSelected
+                                            ? 'border-red-500 bg-red-50 text-red-700'
+                                            : isAvailable
+                                                ? 'border-gray-300 hover:border-red-300 text-gray-700'
+                                                : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                                            }`}
+                                    >
+                                        {value}
+                                        {!isAvailable && (
+                                            <span className="ml-2 text-xs">(Out of Stock)</span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
 
-        const hasMeaningfulPrefix = prefix.length > 2 && prefix.trim().length > 0;
-        if (hasMeaningfulPrefix) {
-            label = prefix.trim().replace(/:$/, '');
+// Products without variation metadata: derive option labels from SKU names
+function FallbackSelector({ items, selectedSKU, onSelectSKU }: SKUSelectorProps) {
+
+    const selectOptionLabel = 'Select Option';
+    let label = selectOptionLabel;
+    const getDisplayName = (item: VTEXItem): string => item.complementName || item.name;
+
+    // Common prefix across SKU names (e.g. "Size ") becomes the label and is stripped from options
+    const names = items.map(getDisplayName);
+    let prefix = names[0];
+    for (let i = 1; i < names.length; i++) {
+        while (names[i].indexOf(prefix) !== 0) {
+            prefix = prefix.substring(0, prefix.length - 1);
+            if (prefix === '') break;
         }
-    } else {
-        label = variationName;
+    }
+    const hasMeaningfulPrefix = prefix.length > 2 && prefix.trim().length > 0;
+    if (hasMeaningfulPrefix) {
+        label = prefix.trim().replace(/:$/, '');
     }
 
     return (
@@ -66,7 +114,7 @@ export default function SKUSelector({ items, selectedSKU, onSelectSKU }: SKUSele
                         // Strategy 3: Dynamic Stripping
                         // If the display name starts with the label (e.g. Label: "Size", Value: "Size 40"), strip it.
                         // This handles cases where VTEX API returns the full name in the variation value or fallback.
-                        if (label && label !== 'Select Option') {
+                        if (label && label !== selectOptionLabel) {
                             // Escape special characters in label for regex
                             const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                             const regex = new RegExp(`^${escapedLabel}\\s*`, 'i');
@@ -75,16 +123,12 @@ export default function SKUSelector({ items, selectedSKU, onSelectSKU }: SKUSele
 
                         // Apply legacy prefix stripping if fallback strategy is active and still needed
                         // (Only if Dynamic Stripping didn't already handle it effectively via label match)
-                        if (!variationName && prefix && displayName.startsWith(prefix)) {
-                            const hasMeaningfulPrefix = prefix.length > 2 && prefix.trim().length > 0;
-                            if (hasMeaningfulPrefix) {
-                                displayName = displayName.slice(prefix.length);
-                            }
+                        if (hasMeaningfulPrefix && displayName.startsWith(prefix)) {
+                            displayName = displayName.slice(prefix.length);
                         }
 
                         const isSelected = item.itemId === selectedSKU;
-                        const isAvailable = item.sellers.length > 0 &&
-                            item.sellers[0].commertialOffer.AvailableQuantity > 0;
+                        const isAvailable = isItemAvailable(item);
 
                         return (
                             <button

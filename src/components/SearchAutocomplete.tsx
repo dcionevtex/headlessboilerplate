@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { searchProducts } from '@/lib/search';
+import { searchProducts, getVariantLabel, getProductHref } from '@/lib/search';
 import { VTEXProduct } from '@/types/vtex';
 import config from '@/config.json';
 
@@ -96,7 +96,7 @@ export default function SearchAutocomplete({ placeholder, size }: SearchAutocomp
 
     const handleSelectProduct = (product: VTEXProduct) => {
         setOpen(false);
-        router.push(`/product/${product.productId}`);
+        router.push(getProductHref(product));
     };
 
     const handleSeeAll = () => {
@@ -169,6 +169,7 @@ export default function SearchAutocomplete({ placeholder, size }: SearchAutocomp
                         <>
                             {results.products.map((product, index) => {
                                 const thumbnailUrl = product.items[0]?.images[0]?.imageUrl;
+                                const variantLabel = getVariantLabel(product);
                                 const price = product.items[0]?.sellers[0]?.commertialOffer?.Price ?? 0;
                                 return (
                                     <button
@@ -194,6 +195,7 @@ export default function SearchAutocomplete({ placeholder, size }: SearchAutocomp
                                         <span className="flex-1 min-w-0">
                                             <span className="block text-sm text-gray-800 line-clamp-1">
                                                 {product.productName}
+                                                {variantLabel && <span className="text-gray-500"> · {variantLabel}</span>}
                                             </span>
                                             <span className="block text-sm font-semibold text-red-500">
                                                 {formatPrice(price)}

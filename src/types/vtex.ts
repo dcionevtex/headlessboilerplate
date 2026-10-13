@@ -8,6 +8,14 @@ export interface VTEXProduct {
   categories: string[];
   description: string;
   items: VTEXItem[];
+  /** Intelligent Search's per-result SKU specifications. When a product is split into one result
+   * per specification value (e.g. per Colour), that dimension carries a single value here. */
+  skuSpecifications?: SKUSpecification[];
+}
+
+export interface SKUSpecification {
+  field: { name: string };
+  values: Array<{ name: string }>;
 }
 
 export interface VTEXItem {

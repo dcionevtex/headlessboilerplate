@@ -1,4 +1,5 @@
 import { VTEXProduct } from '@/types/vtex';
+import { SearchProduct, mapSearchProductToVTEX } from '@/lib/search';
 
 const PRODUCT_API = '/api/product';
 
@@ -15,8 +16,8 @@ export async function getProductById(productId: string): Promise<VTEXProduct | n
             throw new Error(`Product API error: ${response.status}`);
         }
 
-        const data = await response.json();
-        return data;
+        const data: SearchProduct = await response.json();
+        return mapSearchProductToVTEX(data);
     } catch (error) {
         console.error('Error fetching product:', error);
         return null;

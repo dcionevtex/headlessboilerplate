@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { VTEXProduct } from '@/types/vtex';
 import { FacetsResponse, Facet, FacetValue } from '@/lib/search';
 import config from '@/config.json';
+import PriceRangeSlider from '@/components/PriceRangeSlider';
 
 export interface FilterState {
     brand: string[];
@@ -81,6 +82,7 @@ export default function SearchSidebar({ facets, products, filters, onFilterChang
             categoriesByDepth,
             minPrice: minPrice === Infinity ? 0 : Math.floor(minPrice),
             maxPrice: Math.ceil(maxPrice),
+            hasPriceSpread: maxPrice > minPrice,
         };
     }, [products]);
 
@@ -142,6 +144,15 @@ export default function SearchSidebar({ facets, products, filters, onFilterChang
         });
     }, [priceRangeFacet]);
 
+    // Slider bounds: VTEX's price facet spans the whole result set; fall back to loaded products
+    const priceBounds = useMemo(() => {
+        if (priceBuckets.length === 0) return { min: fallbackFacets.minPrice, max: fallbackFacets.maxPrice };
+        return {
+            min: Math.floor(Math.min(...priceBuckets.map(b => b.range?.from ?? 0))),
+            max: Math.ceil(Math.max(...priceBuckets.map(b => b.range?.to ?? 0))),
+        };
+    }, [priceBuckets, fallbackFacets.minPrice, fallbackFacets.maxPrice]);
+
     const brandOptions: FilterOption[] = brandFacet && brandFacet.values.length > 0
         ? toOptions(brandFacet.values)
         : fallbackFacets.brands.map(value => ({ value }));
@@ -168,14 +179,6 @@ export default function SearchSidebar({ facets, products, filters, onFilterChang
         onFilterChange({
             ...filters,
             categoryByDepth: { ...filters.categoryByDepth, [depth]: updated },
-        });
-    };
-
-    const handlePriceRangeClick = (from: number, to: number) => {
-        const isSelected = filters.priceRange[0] === from && filters.priceRange[1] === to;
-        onFilterChange({
-            ...filters,
-            priceRange: isSelected ? [0, 0] : [from, to]
         });
     };
 
@@ -262,38 +265,17 @@ export default function SearchSidebar({ facets, products, filters, onFilterChang
             {/* Price Range */}
             <div className="pt-4 border-t border-gray-100">
                 <h3 className="font-semibold text-gray-900 mb-2">Price Range</h3>
-                {priceBuckets.length > 0 ? (
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {priceBuckets.map((bucket, index) => {
-                            const from = bucket.range?.from ?? 0;
-                            const to = bucket.range?.to ?? 0;
-                            const isSelected = filters.priceRange[0] === from && filters.priceRange[1] === to;
-
-                            return (
-                                <button
-                                    key={index}
-                                    type="button"
-                                    onClick={() => handlePriceRangeClick(from, to)}
-                                    className={`w-full flex items-center justify-between gap-2 text-sm px-2 py-1.5 rounded transition-colors cursor-pointer ${isSelected
-                                        ? 'bg-red-50 text-red-600 font-medium'
-                                        : 'text-gray-600 hover:text-red-500'
-                                        }`}
-                                >
-                                    <span>{formatPrice(from)} - {formatPrice(to)}</span>
-                                    <span className="text-xs text-gray-400">({bucket.quantity})</span>
-                                </button>
-                            );
-                        })}
-                    </div>
+                {/* Slider only when the loaded results actually differ in price */}
+                {fallbackFacets.hasPriceSpread ? (
+                    <PriceRangeSlider
+                        bounds={priceBounds}
+                        value={filters.priceRange}
+                        onChange={priceRange => onFilterChange({ ...filters, priceRange })}
+                        formatPrice={formatPrice}
+                        labels={{ min: 'Minimum price', max: 'Maximum price' }}
+                    />
                 ) : (
-                    <>
-                        <p className="text-sm text-gray-600 font-medium">
-                            {formatPrice(fallbackFacets.minPrice)} - {formatPrice(fallbackFacets.maxPrice)}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                            Sort by price to order results
-                        </p>
-                    </>
+                    <p className="text-sm text-gray-600 font-medium">{formatPrice(priceBounds.min)}</p>
                 )}
             </div>
 

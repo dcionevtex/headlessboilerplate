@@ -32,6 +32,7 @@ import { LocationProvider } from "@/context/LocationContext";
 import { AuthProvider } from "@/context/AuthContext";
 import GoogleTagManager from "@/components/GoogleTagManager";
 import PWARegister from "@/components/PWARegister";
+import DemoConsent from "@/components/DemoConsent";
 
 export default function RootLayout({
   children,
@@ -49,6 +50,7 @@ export default function RootLayout({
           <CartProvider>
             <LocationProvider>
               {children}
+              <DemoConsent />
             </LocationProvider>
           </CartProvider>
         </AuthProvider>

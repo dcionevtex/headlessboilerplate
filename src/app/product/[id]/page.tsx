@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { getProductById } from '@/lib/product';
 import { addItemToCart } from '@/lib/cart';
 import { VTEXProduct, VTEXItem } from '@/types/vtex';
@@ -17,6 +17,8 @@ import config from '@/config.json';
 export default function ProductPage() {
     const params = useParams();
     const productId = params.id as string;
+    // Set by search results pinned to one variant (e.g. a per-Colour card) - see getProductHref
+    const requestedSkuId = useSearchParams().get('skuId');
 
     const [product, setProduct] = useState<VTEXProduct | null>(null);
     const [selectedSKU, setSelectedSKU] = useState<string>('');
@@ -36,9 +38,10 @@ export default function ProductPage() {
                 const data = await getProductById(productId);
                 if (data) {
                     setProduct(data);
-                    // Select first available SKU by default
+                    // Select the requested SKU when it belongs to this product, else the first one
                     if (data.items && data.items.length > 0) {
-                        setSelectedSKU(data.items[0].itemId);
+                        const requested = data.items.find(item => item.itemId === requestedSkuId);
+                        setSelectedSKU((requested || data.items[0]).itemId);
                     }
                 } else {
                     setError(true);
@@ -54,7 +57,7 @@ export default function ProductPage() {
         if (productId) {
             fetchProduct();
         }
-    }, [productId]);
+    }, [productId, requestedSkuId]);
 
     const selectedItem = product?.items?.find(item => item.itemId === selectedSKU);
     const seller = selectedItem?.sellers?.find(s => s.sellerDefault) || selectedItem?.sellers?.[0];
@@ -185,8 +188,9 @@ export default function ProductPage() {
                                 )}
 
                                 {/* Product Name */}
+                                {/* Product Name - follows the selected SKU on multi-SKU products */}
                                 <h1 className="text-3xl font-bold text-gray-900">
-                                    {product.productName}
+                                    {(product.items.length > 1 && selectedItem?.nameComplete) || product.productName}
                                 </h1>
 
                                 {/* Product Metadata */}
