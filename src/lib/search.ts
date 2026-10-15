@@ -25,9 +25,11 @@ export interface SearchProduct {
         sellers: Array<{
             sellerId: string;
             sellerName: string;
+            sellerDefault: boolean;
             commertialOffer: {
                 Price: number;
                 ListPrice: number;
+                AvailableQuantity: number;
                 Installments: Array<{
                     Value: number;
                     NumberOfInstallments: number;
@@ -117,6 +119,15 @@ export function getProductHref(product: VTEXProduct): string {
         : `/product/${product.productId}`;
 }
 
+// Lower rank sorts first. VTEX's own sellerDefault flag is the authoritative
+// signal for which seller is actually sellable; a positive Price is the
+// fallback if that flag is ever missing.
+function rankSeller(seller: SearchProduct['items'][number]['sellers'][number]): number {
+    if (seller.sellerDefault) return 0;
+    if (seller.commertialOffer.Price > 0) return 1;
+    return 2;
+}
+
 // Transform SearchProduct to VTEXProduct format for compatibility with ProductCard and PDP
 export function mapSearchProductToVTEX(searchProduct: SearchProduct): VTEXProduct {
     return {
@@ -148,10 +159,14 @@ export function mapSearchProductToVTEX(searchProduct: SearchProduct): VTEXProduc
                     imageUrl: img.imageUrl,
                     imageText: img.imageTag || searchProduct.productName,
                 })),
-                sellers: item.sellers.map(seller => ({
+                // Marketplace SKUs (e.g. Bosch via bosch656) also list the account's own
+                // seller "1" first, out of stock or at Price 0 - rank the sellable one to
+                // sellers[0] so any code reading that index directly gets the real offer.
+                sellers: [...item.sellers]
+                    .sort((a, b) => rankSeller(a) - rankSeller(b))
+                    .map(seller => ({
                     ...seller,
                     addToCartLink: `/checkout/cart/add?sku=${item.itemId}&qty=1`,
-                    sellerDefault: true,
                     commertialOffer: {
                         ...seller.commertialOffer,
                         DeliverySlaSamplesPerRegion: {},
@@ -172,7 +187,6 @@ export function mapSearchProductToVTEX(searchProduct: SearchProduct): VTEXProduc
                         PriceWithoutDiscount: seller.commertialOffer.ListPrice,
                         RewardValue: 0,
                         PriceValidUntil: '2026-12-31T23:59:59Z',
-                        AvailableQuantity: 100,
                         Tax: 0,
                         CacheVersionUsedToCallCheckout: '',
                     },
