@@ -178,7 +178,7 @@ project-root/
     │   └── AuthContext.tsx          # Email/session token, persisted to localStorage
     │
     ├── lib/
-    │   ├── vtex.ts                 # VTEX Catalog API + mock data fallback
+    │   ├── vtex.ts                 # Homepage collections via Intelligent Search + mock data fallback
     │   ├── cart.ts                  # VTEX Checkout API client (via proxy routes)
     │   ├── search.ts               # VTEX Intelligent Search client (via proxy routes)
     │   ├── product.ts              # Single product fetch (via proxy route)
@@ -401,7 +401,7 @@ All VTEX API calls go through **server-side Next.js API Routes** (proxy pattern)
 
 | Purpose | VTEX API Endpoint | Proxy Route |
 |---------|-------------------|-------------|
-| Catalog (Collections) | `{account}.vtexcommercestable.com.br/api/catalog_system/pub/products/search/?fq=productClusterIds%3A{id}` | Direct server fetch (SSR) |
+| Intelligent Search (Collections) | `{account}.vtexcommercestable.com.br/api/io/_v/api/intelligent-search/product_search/productClusterIds/{id}` | Direct server fetch (SSR) |
 | Product by ID | `{account}.vtexcommercestable.com.br/api/catalog_system/pub/products/search?fq=productId:{id}` | `/api/product` |
 | Intelligent Search | `{account}.myvtex.com/api/io/_v/api/intelligent-search/product_search` | `/api/search` |
 | Intelligent Search Facets | `{account}.myvtex.com/api/io/_v/api/intelligent-search/facets` | `/api/facets` |

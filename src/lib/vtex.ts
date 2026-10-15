@@ -1,7 +1,11 @@
 import { VTEXProduct } from '@/types/vtex';
 import config from '@/config.json';
+import { SearchResponse, mapSearchProductToVTEX } from '@/lib/search';
 
-const VTEX_API_BASE = `https://${config.vtex.accountName}.vtexcommercestable.com.br/api/catalog_system/pub/products/search/?fq=productClusterIds%3A`;
+// Homepage sections browse their VTEX Collection (productCluster) through Intelligent Search's
+// productClusterIds facet path - same pipeline as PLP/PDP, so marketplace sellers are ranked and
+// split results carry their variant - instead of the legacy Catalog fq=productClusterIds: search.
+const VTEX_SEARCH_API_DIRECT = `https://${config.vtex.accountName}.vtexcommercestable.com.br/api/io/_v/api/intelligent-search/product_search`;
 const MOCK_PRODUCTS: VTEXProduct[] = [
     {
         productId: '1',
@@ -530,40 +534,26 @@ const MOCK_PRODUCTS: VTEXProduct[] = [
 ];
 
 
-export async function fetchVTEXCollection(collectionId: string, options?: { from?: number; to?: number }): Promise<VTEXProduct[]> {
+export async function fetchVTEXCollection(collectionId: string, count: number = 24): Promise<VTEXProduct[]> {
     try {
-        let url = `${VTEX_API_BASE}${collectionId}&sc=1`;
-        if (options) {
-            const { from = 0, to = 49 } = options;
-            url += `&_from=${from}&_to=${to}`;
-        } else {
-            // Default to fetch up to 50 items
-            url += `&_from=0&_to=49`;
-        }
-
-        const response = await fetch(url, {
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-            },
+        const params = new URLSearchParams({ count: count.toString(), page: '1' });
+        const response = await fetch(`${VTEX_SEARCH_API_DIRECT}/productClusterIds/${encodeURIComponent(collectionId)}?${params}`, {
+            headers: { Accept: 'application/json' },
             // Revalidate every 5 minutes
             next: { revalidate: 300 },
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to fetch products from collection ${collectionId}: ${response.statusText}`);
+            throw new Error(`Failed to fetch products from collection ${collectionId}: ${response.status}`);
         }
 
-        const products: VTEXProduct[] = await response.json();
-        console.log(`✅ VTEX API Success: Fetched ${products.length} products from collection ${collectionId}`);
-        return products;
+        const data: SearchResponse = await response.json();
+        return (data.products || [])
+            .map(mapSearchProductToVTEX)
+            .filter(p => (p.items[0]?.sellers[0]?.commertialOffer?.Price ?? 0) > 0);
     } catch (error) {
         console.warn(`Error fetching VTEX collection ${collectionId}, falling back to mock data:`, error);
         // Fallback to MOCK_PRODUCTS for ANY collection failure to ensure UI renders in dev/demo
         return MOCK_PRODUCTS;
     }
-}
-
-export async function fetchVTEXProducts(): Promise<VTEXProduct[]> {
-    return fetchVTEXCollection('139');
 }

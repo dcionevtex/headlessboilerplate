@@ -17,8 +17,8 @@ export default async function Home() {
     // Fetch products from both collections in parallel
     // Request up to 50 items for New Arrivals to support pagination
     [sellerProducts, arrivedProducts] = await Promise.all([
-      fetchVTEXCollection(featuredSeller.collectionId),
-      fetchVTEXCollection(newArrivals.collectionId, { from: 0, to: 49 })
+      fetchVTEXCollection(featuredSeller.collectionId, 50),
+      fetchVTEXCollection(newArrivals.collectionId, 50)
     ]);
   } catch (error) {
     console.error("Failed to fetch products on server:", error);

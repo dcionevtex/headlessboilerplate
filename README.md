@@ -19,7 +19,7 @@ The site is also installable as an app straight from the browser (Add to Home Sc
 
 ## What's real vs. what's mocked
 
-Product, search, cart, and account data all come from a live VTEX account (`sobharealtypoc` by default). The only mock fallback in the app is in `src/lib/vtex.ts`: the homepage's featured/new-arrivals sections call the VTEX Catalog Collection API directly, and fall back to a hardcoded `MOCK_PRODUCTS` array only if that specific call fails (outage, offline dev). PDP, search, cart, and auth have no mock fallback — if VTEX is unreachable, those show real errors or empty states rather than fabricated data.
+Product, search, cart, and account data all come from a live VTEX account (`sobharealtypoc` by default). The only mock fallback in the app is in `src/lib/vtex.ts`: the homepage's featured/new-arrivals sections read their VTEX Collections directly through Intelligent Search (`productClusterIds/{id}` path), and fall back to a hardcoded `MOCK_PRODUCTS` array only if that specific call fails (outage, offline dev). PDP, search, cart, and auth have no mock fallback — if VTEX is unreachable, those show real errors or empty states rather than fabricated data.
 
 ## VTEX configuration
 
@@ -55,7 +55,7 @@ Note: PDP button labels and delivery copy are currently inline in `src/app/produ
 
 ## Pages
 
-- **Home** (`/`) — hero banner, carousel, service highlights, then two live product sections backed by VTEX Collection API queries defined in `site-content.json`.
+- **Home** (`/`) — hero banner, carousel, service highlights, then two live product sections backed by the VTEX Collections defined in `site-content.json`, fetched through Intelligent Search (zero-priced products are dropped).
 - **PDP** (`/product/[id]`) — gallery, brand/price/stock (VTEX Catalog API, live), SKU selection, quantity stepper, shipping simulation, Add to Cart (hits the real VTEX cart API and opens the mini-cart).
 - **Search** (`/search`) — VTEX Intelligent Search, trending searches, loading/empty/error states, all copy from `site-content.json`.
 - **Store Locator** (`/store-locator`) — store list from `storelocator-content.json`, rendered with the Google Maps loader.
