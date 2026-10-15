@@ -44,7 +44,7 @@ All in `src/`, imported directly (`import x from '@/whatever.json'`) — no fetc
 | File | Drives |
 |---|---|
 | `header-content.json` | Logo image + alt text, search bar placeholder. |
-| `menu-content.json` | The header's category dropdown — `categories[]`, each with an `href` and `subcategories[]`. Some entries link to `/category/...` paths, which this template doesn't implement as a route (that's added per-fork, e.g. in the `tatademo` project) — point new entries at `/search?q=...` unless you're adding your own category page. |
+| `menu-content.json` | The header's category dropdown — `categories[]`, each with an `href` and `subcategories[]`. Category entries link to `/search?category=<slug path>` (e.g. `power-tools`, `safety/head-protection`), which browses Intelligent Search's category facet path rather than matching the category name as a keyword. Some entries still link to `/category/...` paths, which this template doesn't implement as a route (that's added per-fork, e.g. in the `tatademo` project). Reserve `/search?q=...` for genuine brand/keyword searches. |
 | `footer-content.json` | About-us blurb, quick links, socials, contact info, copyright. |
 | `site-content.json` | Search page copy (empty/loading/error states, trending searches), cart drawer labels, hero banner, homepage carousel slides, service-highlight icons/text, and the two homepage product sections (`sections.featuredSeller`/`.newArrivals`, each just a VTEX collection ID + title). |
 | `storelocator-content.json` | Store list for `/store-locator`. |
@@ -77,7 +77,7 @@ There's no dedicated PLP/category route in the base template — nav category li
 1. Point `src/config.json`'s `vtex.accountName` (and `checkoutPath`/`sellerId` if different) at your VTEX account.
 2. Rebrand: `header-content.json` (logo), `footer-content.json`, `pwa-content.json` (app name/colors), and swap the image assets in `public/images/`.
 3. Regenerate the PWA icons for your brand: edit the colors/mark in `scripts/generate-pwa-icons.py` and run it (`pip install pillow` first).
-4. Update `menu-content.json` to your real category structure and VTEX search queries.
+4. Update `menu-content.json` to your real category tree (`/search?category=<slug path>` links).
 5. Everything else — API routes, cart logic, auth flow, PWA plumbing — works unchanged.
 
 ## Tech stack
