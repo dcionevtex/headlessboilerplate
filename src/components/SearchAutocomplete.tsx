@@ -173,7 +173,7 @@ export default function SearchAutocomplete({ placeholder, size }: SearchAutocomp
                                 const price = product.items[0]?.sellers[0]?.commertialOffer?.Price ?? 0;
                                 return (
                                     <button
-                                        key={product.productId}
+                                        key={`${product.productId}-${product.items[0]?.itemId ?? ''}`}
                                         type="button"
                                         role="option"
                                         aria-selected={highlightedIndex === index}

@@ -66,7 +66,7 @@ export default function ProductCarousel({ products, title }: ProductCarouselProp
                 >
                     {products.map((product) => (
                         <div
-                            key={product.productId}
+                            key={`${product.productId}-${product.items[0]?.itemId ?? ''}`}
                             className="min-w-[280px] md:min-w-[320px] snap-start"
                         >
                             <ProductCard product={product} />
