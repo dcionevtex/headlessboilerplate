@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { searchProducts, getTopSearches, getFacets, TopSearch, FacetsResponse } from '@/lib/search';
+import { searchAllProducts, SEARCH_MAX_PRODUCTS, getTopSearches, getFacets, TopSearch, FacetsResponse } from '@/lib/search';
 import { VTEXProduct } from '@/types/vtex';
 import PaginatedProductGrid from '@/components/PaginatedProductGrid';
 import SortDropdown from '@/components/SortDropdown';
@@ -116,7 +116,7 @@ export default function SearchPageContent() {
 
             try {
                 const [productsData, facetsData] = await Promise.all([
-                    searchProducts(query, 1, 100, { category }),
+                    searchAllProducts(query, { category }),
                     getFacets(query, { category }),
                 ]);
                 if (cancelled) return;
@@ -172,6 +172,7 @@ export default function SearchPageContent() {
                                 <p className="text-gray-600">
                                     {filteredProducts.length} {search.resultsFound}
                                     {products.length !== filteredProducts.length && ` (filtered from ${products.length})`}
+                                    {totalResults > products.length && ` (showing the first ${SEARCH_MAX_PRODUCTS} of ${totalResults} - refine your search to see the rest)`}
                                 </p>
                             )}
                         </div>

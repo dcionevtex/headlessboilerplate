@@ -251,6 +251,28 @@ export async function searchProducts(
     }
 }
 
+
+// Intelligent Search caps a page at 100 products (101+ returns nothing). The search page sorts,
+// filters and paginates in the browser, so it needs the whole result set: fetch page 1, then the
+// remaining pages in parallel. Capped so a very large category doesn't pull thousands of products.
+const IS_MAX_PAGE_SIZE = 100;
+export const SEARCH_MAX_PRODUCTS = 500;
+
+export async function searchAllProducts(
+    query: string,
+    options?: SearchOptions
+): Promise<{ products: VTEXProduct[]; recordsFiltered: number }> {
+    const first = await searchProducts(query, 1, IS_MAX_PAGE_SIZE, options);
+    const pageCount = Math.ceil(Math.min(first.recordsFiltered, SEARCH_MAX_PRODUCTS) / IS_MAX_PAGE_SIZE);
+    const rest = await Promise.all(
+        Array.from({ length: Math.max(pageCount - 1, 0) }, (_, i) => searchProducts(query, i + 2, IS_MAX_PAGE_SIZE, options))
+    );
+    return {
+        products: [first, ...rest].flatMap(page => page.products).slice(0, SEARCH_MAX_PRODUCTS),
+        recordsFiltered: first.recordsFiltered,
+    };
+}
+
 export async function getTopSearches(): Promise<TopSearchesResponse> {
     try {
         const response = await fetch(TOP_SEARCHES_API, {
